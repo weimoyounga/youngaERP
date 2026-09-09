@@ -89,8 +89,8 @@
       ];
 
       const userRecords = [
-        { id: "U-001", name: "又平", role: "正職", account: "", password: "", email: "", phone: "", status: "啟用", warehouses: "主倉" },
-        { id: "U-003", name: "惠羽", role: "正職", account: "nozomi", password: "312057", email: "", phone: "", status: "啟用", warehouses: "主倉" },
+        { id: "U-001", name: "又平", role: "正職", account: "", password: "000000", email: "", phone: "", status: "啟用", warehouses: "主倉" },
+        { id: "U-003", name: "惠羽", role: "正職", account: "nozomi", password: "000000", email: "", phone: "", status: "啟用", warehouses: "主倉" },
       ];
 
       const userTypeOptions = ["正職", "工讀", "裁縫", "寄售品牌"];
@@ -107,6 +107,7 @@
       ];
 
       const userStorageKey = "erp-user-records";
+      const loginSessionStorageKey = "erp-current-user";
       const customerStorageKey = "erp-customer-records";
       const orderStorageKey = "erp-order-records";
       const shipmentStorageKey = "erp-shipment-records";
@@ -173,8 +174,10 @@
         const sourceUsers = Array.isArray(users) ? users : userRecords;
         const normalizedUsers = sourceUsers.map((user) => ({
           ...user,
-          account: user.id === "U-003" ? "nozomi" : user.account || "",
-          password: user.id === "U-003" ? "312057" : user.password || "",
+          account: user.account || user.username || "",
+          password: String(user.password || "") === "312057"
+            ? "000000"
+            : /^\d{6}$/.test(String(user.password || "")) ? String(user.password) : "000000",
         }));
         const hasNozomi = normalizedUsers.some((user) => user.id === "U-003");
         if (!hasNozomi) {
@@ -390,7 +393,7 @@
           name: "",
           role: userTypeOptions[0],
           account: "",
-          password: "",
+          password: "000000",
           email: "",
           phone: "",
           status: "啟用",
@@ -403,8 +406,8 @@
           id: user.id,
           name: user.name || "",
           role: user.role || userTypeOptions[0],
-          account: user.account || "",
-          password: user.password || "",
+          account: user.account || user.username || "",
+          password: /^\d{6}$/.test(String(user.password || "")) ? String(user.password) : "000000",
           email: user.email || "",
           phone: user.phone || "",
           status: user.status || "啟用",
@@ -903,6 +906,14 @@
       ];
 
       function App() {
+        const [currentUser, setCurrentUser] = useState(() => {
+          try {
+            const storedUser = window.sessionStorage.getItem(loginSessionStorageKey);
+            return storedUser ? JSON.parse(storedUser) : null;
+          } catch (error) {
+            return null;
+          }
+        });
         const [activeView, setActiveView] = useState("home");
         const [activeFlow, setActiveFlow] = useState("orders");
         const [products, setProducts] = useState(initialProducts);
@@ -927,6 +938,33 @@
         const [activeHome, setActiveHome] = useState("pending");
         const [homeCalendarEvents, setHomeCalendarEvents] = useState(initialHomeCalendarEvents);
         const [productDraft, setProductDraft] = useState(createEmptyProductDraft());
+
+        const login = ({ userId, password }) => {
+          const matchedUser = users.find(
+            (user) =>
+              user.status === "啟用" &&
+              user.id === userId &&
+              String(user.password || "000000") === password.trim()
+          );
+          if (!matchedUser) return false;
+          const nextUser = { id: matchedUser.id, name: matchedUser.name, role: matchedUser.role };
+          setCurrentUser(nextUser);
+          try {
+            window.sessionStorage.setItem(loginSessionStorageKey, JSON.stringify(nextUser));
+          } catch (error) {
+            console.warn("儲存登入狀態失敗。", error);
+          }
+          return true;
+        };
+
+        const logout = () => {
+          setCurrentUser(null);
+          try {
+            window.sessionStorage.removeItem(loginSessionStorageKey);
+          } catch (error) {
+            console.warn("清除登入狀態失敗。", error);
+          }
+        };
 
         useEffect(() => {
           try {
@@ -1442,6 +1480,10 @@
           console.log("新建訂單已加入未完成訂單列表，不扣庫存：", nextOrder);
         };
 
+        if (!currentUser) {
+          return <LoginPage users={users} onLogin={login} />;
+        }
+
         return (
           <main className="min-h-screen bg-[#DDE3D5] px-5 py-6 text-neutral-900 sm:px-8 sm:py-10">
             <div className="mx-auto max-w-7xl">
@@ -1462,6 +1504,16 @@
                   <NavButton active={activeView === "importExport"} onClick={() => setActiveView("importExport")}>
                     匯入/匯出
                   </NavButton>
+                  <div className="ml-auto flex items-center gap-3 px-3">
+                    <span className="text-sm text-neutral-600">{currentUser.id} {currentUser.name}</span>
+                    <button
+                      type="button"
+                      onClick={logout}
+                      className="h-9 rounded-md border border-neutral-300 bg-white px-3 text-sm font-medium text-neutral-700 transition hover:border-neutral-950 hover:text-neutral-950"
+                    >
+                      登出
+                    </button>
+                  </div>
                 </div>
               </nav>
 
@@ -1579,6 +1631,7 @@
                   setPartners={setPartners}
                   products={products}
                   setProducts={setProducts}
+                  currentUser={currentUser}
                   setActiveView={setActiveView}
                 />
               )}
@@ -1606,7 +1659,7 @@
                   labelPrintJobs={labelPrintJobs}
                   calendarShifts={calendarShifts}
                   assignedTaskRecords={assignedTaskRecords}
-                  currentUserName={users[0]?.name || "又平"}
+                  currentUserName={currentUser?.name || users[0]?.name || "又平"}
                 />
               )}
 
@@ -5548,11 +5601,16 @@
         setPartners,
         products,
         setProducts,
+        currentUser,
         setActiveView,
       }) {
         const [showUserModal, setShowUserModal] = useState(false);
         const [userModalMode, setUserModalMode] = useState("create");
         const [userDraft, setUserDraft] = useState(createEmptyUserDraft());
+        const [userPasswordLocked, setUserPasswordLocked] = useState(false);
+        const [passwordPromptUser, setPasswordPromptUser] = useState(null);
+        const [passwordPromptInput, setPasswordPromptInput] = useState("");
+        const [passwordPromptError, setPasswordPromptError] = useState("");
         const [showCustomerModal, setShowCustomerModal] = useState(false);
         const [customerModalMode, setCustomerModalMode] = useState("create");
         const [customerDraft, setCustomerDraft] = useState(createEmptyCustomerDraft());
@@ -5606,25 +5664,57 @@
         const openUserModal = () => {
           setUserModalMode("create");
           setUserDraft(createEmptyUserDraft());
+          setUserPasswordLocked(false);
           setShowUserModal(true);
         };
 
         const viewUser = (user) => {
           setUserModalMode("view");
           setUserDraft(createUserDraftFromRecord(user));
+          setUserPasswordLocked(true);
           setShowUserModal(true);
         };
 
         const editUser = (user) => {
+          const isAdminEditingOtherUser = ["U-001", "U-003"].includes(currentUser?.id) && currentUser.id !== user.id;
+          if (!isAdminEditingOtherUser) {
+            setPasswordPromptUser(user);
+            setPasswordPromptInput("");
+            setPasswordPromptError("");
+            return;
+          }
           setUserModalMode("edit");
           setUserDraft(createUserDraftFromRecord(user));
+          setUserPasswordLocked(isAdminEditingOtherUser);
           setShowUserModal(true);
+        };
+
+        const confirmUserPasswordEdit = (event) => {
+          event.preventDefault();
+          if (!passwordPromptUser) return;
+          if (passwordPromptInput.trim() !== String(passwordPromptUser.password || "000000")) {
+            setPasswordPromptError("密碼不正確，無法開啟編輯。");
+            return;
+          }
+          setUserModalMode("edit");
+          setUserDraft(createUserDraftFromRecord(passwordPromptUser));
+          setUserPasswordLocked(false);
+          setPasswordPromptUser(null);
+          setPasswordPromptInput("");
+          setPasswordPromptError("");
+          setShowUserModal(true);
+        };
+
+        const closeUserPasswordPrompt = () => {
+          setPasswordPromptUser(null);
+          setPasswordPromptInput("");
+          setPasswordPromptError("");
         };
 
         const saveUser = (event) => {
           event.preventDefault();
           if (!userDraft.name.trim() || !userDraft.role) return;
-          if (!/^[a-zA-Z0-9]+$/.test(userDraft.account.trim())) {
+          if (userDraft.account.trim() && !/^[a-zA-Z0-9]+$/.test(userDraft.account.trim())) {
             alert("帳號僅可輸入英文字母與數字。");
             return;
           }
@@ -5634,6 +5724,7 @@
           }
           const duplicatedAccount = users.some(
             (user) =>
+              userDraft.account.trim() &&
               user.account === userDraft.account.trim() &&
               (userModalMode !== "edit" || user.id !== userDraft.id)
           );
@@ -5651,7 +5742,9 @@
             name: userDraft.name.trim(),
             role: userDraft.role,
             account: userDraft.account.trim(),
-            password: userDraft.password.trim(),
+            password: userPasswordLocked
+              ? users.find((user) => user.id === userDraft.id)?.password || "000000"
+              : userDraft.password.trim(),
             email: userDraft.email.trim(),
             phone: userDraft.phone.trim(),
             status: userDraft.status,
@@ -5789,7 +5882,7 @@
               {activeDatabase === "users" && (
                 <DatabaseTable
                   title="使用者資料"
-                  helper="管理內部使用者、角色與帳號狀態；登入機制暫時停用。"
+                  helper="管理內部使用者、角色、帳號狀態與登入密碼。"
                   docs={users}
                   columns={["id", "name", "account", "role", "status"]}
                   onView={viewUser}
@@ -5855,8 +5948,19 @@
                 draft={userDraft}
                 setDraft={setUserDraft}
                 mode={userModalMode}
+                passwordLocked={userPasswordLocked}
                 onClose={() => setShowUserModal(false)}
                 onSubmit={saveUser}
+              />
+            )}
+            {passwordPromptUser && (
+              <UserPasswordConfirmModal
+                user={passwordPromptUser}
+                password={passwordPromptInput}
+                error={passwordPromptError}
+                setPassword={setPasswordPromptInput}
+                onClose={closeUserPasswordPrompt}
+                onSubmit={confirmUserPasswordEdit}
               />
             )}
             {showCategoryModal && (
@@ -5880,8 +5984,56 @@
         );
       }
 
-      function UserFormModal({ draft, setDraft, mode = "create", onClose, onSubmit }) {
+      function UserPasswordConfirmModal({ user, password, error, setPassword, onClose, onSubmit }) {
+        return (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-neutral-950/35 px-4 py-6">
+            <div className="w-full max-w-sm rounded-lg border border-neutral-200 bg-[#D6DEC9] shadow-xl">
+              <div className="border-b border-neutral-100 px-5 py-4">
+                <h3 className="text-lg font-semibold text-neutral-950">確認目前密碼</h3>
+                <p className="mt-1 text-sm text-neutral-500">
+                  編輯 {user.id} {user.name} 前，請先輸入目前密碼。
+                </p>
+              </div>
+              <form onSubmit={onSubmit} className="space-y-4 p-5">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-neutral-700">目前密碼</span>
+                  <input
+                    required
+                    type="password"
+                    inputMode="numeric"
+                    maxLength="6"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="輸入 6 位數字"
+                    className="h-10 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-900 focus:ring-2 focus:ring-neutral-900/10"
+                  />
+                </label>
+                {error && (
+                  <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                    {error}
+                  </div>
+                )}
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-950 hover:text-neutral-950"
+                  >
+                    取消
+                  </button>
+                  <button type="submit" className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-700">
+                    確認
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        );
+      }
+
+      function UserFormModal({ draft, setDraft, mode = "create", passwordLocked = false, onClose, onSubmit }) {
         const isViewMode = mode === "view";
+        const canEditPassword = !isViewMode && !passwordLocked;
         const modalTitle =
           mode === "view" ? "查看使用者資料" : mode === "edit" ? "編輯使用者資料" : "新增使用者資料";
         const modalHelper =
@@ -5896,7 +6048,7 @@
         const updateDraft = (field, value) => {
           setDraft((current) => ({ ...current, [field]: value }));
         };
-        const visiblePasswordValue = isViewMode && draft.password
+        const visiblePasswordValue = (isViewMode || passwordLocked) && draft.password
           ? `${draft.password.slice(0, 1)}${"•".repeat(Math.max(0, draft.password.length - 1))}`
           : draft.password;
 
@@ -5955,9 +6107,8 @@
                     </select>
                   </FormField>
 
-                  <FormField label="帳號（必填，英數字）">
+                  <FormField label="帳號（英數字）">
                     <input
-                      required
                       disabled={isViewMode}
                       pattern="[A-Za-z0-9]+"
                       value={draft.account}
@@ -5971,8 +6122,8 @@
                   <FormField label="密碼（必填，6 位數字）">
                     <input
                       required
-                      disabled={isViewMode}
-                      type={isViewMode ? "text" : "password"}
+                      disabled={!canEditPassword}
+                      type={canEditPassword ? "password" : "text"}
                       inputMode="numeric"
                       maxLength="6"
                       pattern="\\d{6}"
@@ -5982,6 +6133,9 @@
                       autoComplete={mode === "create" ? "new-password" : "current-password"}
                       className={readonlyClass}
                     />
+                    {passwordLocked && (
+                      <p className="mt-2 text-xs text-neutral-500">管理者編輯其他使用者時不可修改密碼。</p>
+                    )}
                   </FormField>
 
                   <FormField label="E-mail">
@@ -8607,6 +8761,92 @@
             </div>
             <p className="mt-3 text-sm text-neutral-500">{helper}</p>
           </article>
+        );
+      }
+
+      function LoginPage({ users, onLogin }) {
+        const activeUsers = users.filter((user) => user.status === "啟用");
+        const [userId, setUserId] = useState(activeUsers[0]?.id || "");
+        const [password, setPassword] = useState("");
+        const [error, setError] = useState("");
+
+        useEffect(() => {
+          if (!activeUsers.some((user) => user.id === userId)) {
+            setUserId(activeUsers[0]?.id || "");
+          }
+        }, [users]);
+
+        const submitLogin = (event) => {
+          event.preventDefault();
+          if (!userId || !/^\d{6}$/.test(password)) {
+            setError("請選擇使用者並輸入 6 位數字密碼。");
+            return;
+          }
+          const success = onLogin({ userId, password });
+          if (!success) {
+            setError("密碼錯誤，或使用者已停用。");
+          }
+        };
+
+        return (
+          <main className="flex min-h-screen items-center justify-center bg-[#DDE3D5] px-5 py-10 text-neutral-900">
+            <section className="w-full max-w-md rounded-lg border border-neutral-200 bg-[#D6DEC9] p-6 shadow-sm">
+              <div className="mb-6">
+                <p className="text-sm font-medium text-neutral-500">Inventory ERP</p>
+                <h1 className="mt-2 text-2xl font-semibold text-neutral-950">登入系統</h1>
+                <p className="mt-2 text-sm text-neutral-500">請選擇啟用中的使用者，並輸入 6 位數字密碼。</p>
+              </div>
+
+              <form onSubmit={submitLogin} className="space-y-4">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-neutral-700">使用者</span>
+                  <select
+                    required
+                    value={userId}
+                    onChange={(event) => {
+                      setUserId(event.target.value);
+                      setError("");
+                    }}
+                    className="h-11 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm outline-none transition focus:border-neutral-900 focus:ring-2 focus:ring-neutral-900/10"
+                  >
+                    {activeUsers.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.id} {user.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-neutral-700">密碼</span>
+                  <input
+                    required
+                    type="password"
+                    inputMode="numeric"
+                    maxLength="6"
+                    value={password}
+                    onChange={(event) => {
+                      setPassword(event.target.value.replace(/\D/g, "").slice(0, 6));
+                      setError("");
+                    }}
+                    placeholder="預設 000000"
+                    autoComplete="current-password"
+                    className="h-11 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-900 focus:ring-2 focus:ring-neutral-900/10"
+                  />
+                </label>
+
+                {error && (
+                  <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                    {error}
+                  </div>
+                )}
+
+                <button type="submit" className="h-11 w-full rounded-md bg-neutral-950 px-4 text-sm font-medium text-white transition hover:bg-neutral-700">
+                  登入
+                </button>
+              </form>
+            </section>
+          </main>
         );
       }
 
