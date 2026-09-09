@@ -3647,7 +3647,7 @@
           return "請輸入有效數字。";
         }
         if (field.pattern === "[A-Za-z0-9]+") return "帳號僅可輸入英文字母與數字。";
-        if (field.pattern === "\\d{6}") return "密碼須為 6 位數字，例如 000000。";
+        if (field.pattern === "[0-9]{6}" || field.pattern === "\\d{6}" || field.pattern === "\\\\d{6}") return "密碼須為 6 位數字，例如 000000。";
         return "請輸入文字或依欄位要求填寫正確資料。";
       }
 
@@ -6200,7 +6200,7 @@
                       type={canEditPassword ? "password" : "text"}
                       inputMode="numeric"
                       maxLength="6"
-                      pattern="\\d{6}"
+                      pattern="[0-9]{6}"
                       value={visiblePasswordValue}
                       onChange={(event) => updateDraft("password", event.target.value.replace(/\D/g, "").slice(0, 6))}
                       placeholder="輸入 6 位數字"
@@ -8901,6 +8901,7 @@
                     type="password"
                     inputMode="numeric"
                     maxLength="6"
+                    pattern="[0-9]{6}"
                     value={password}
                     onChange={(event) => {
                       setPassword(event.target.value.replace(/\D/g, "").slice(0, 6));
