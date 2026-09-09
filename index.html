@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-Hant">
   <head>
     <meta charset="UTF-8" />
@@ -1217,7 +1217,7 @@
 
           const selectedItems = shipmentItems.filter((item) => item.selected && (Number(item.shipQuantity) || 0) > 0);
           if (selectedItems.length === 0) {
-            alert("請至少選取一項商品與出貨數量。");
+            alert("請至少選取一項商品與出貨數量。正確格式：商品需勾選，出貨數量需為大於 0 且不超過未出貨數量的數字。");
             return false;
           }
 
@@ -1348,7 +1348,7 @@
             if (qtyInput === null) return;
             receivedQty = isFabricProduct(product) ? normalizeFabricQuantity(qtyInput) : Number(qtyInput) || 0;
             if (!receivedQty || receivedQty <= 0) {
-              alert(`請輸入「${product.name}」正確的收貨數量。`);
+              alert(`請輸入「${product.name}」正確的收貨數量。正確格式：${isFabricProduct(product) ? "公尺數需大於 0，可到小數點後 1 位" : "件數需為大於 0 的整數"}。`);
               return;
             }
 
@@ -2108,7 +2108,7 @@
 
         const confirmImport = () => {
           if (parsedImportRows.length === 0) {
-            alert("請先貼上含表頭與資料列的表格內容。");
+            alert("請先貼上含表頭與資料列的表格內容。正確格式：第一列為欄位名稱，第二列開始為資料列，可直接從 Excel 或 Google Sheets 複製貼上。");
             return;
           }
           console.log(`匯入${selectedDataset.label}資料：`, parsedImportRows);
@@ -2728,7 +2728,10 @@
 
         const addEvent = (event) => {
           event.preventDefault();
-          if (!draft.date || !draft.title.trim()) return;
+          if (!draft.date || !draft.title.trim()) {
+            alert("請填寫行程日期與內容。正確格式：日期為 YYYY-MM-DD；內容為文字。");
+            return;
+          }
 
           const nextEvent = {
             id: `CAL-${draft.date.replaceAll("-", "")}-${String(events.length + 1).padStart(3, "0")}`,
@@ -2761,7 +2764,7 @@
                 </p>
               </div>
 
-              <form onSubmit={addEvent} className="grid gap-4 border-b border-neutral-100 p-5 md:grid-cols-2 xl:grid-cols-5">
+              <form {...formValidationProps} onSubmit={addEvent} className="grid gap-4 border-b border-neutral-100 p-5 md:grid-cols-2 xl:grid-cols-5">
                 <FormField label="類型">
                   <select
                     value={draft.type}
@@ -3214,7 +3217,10 @@
 
         const saveCustomerFromOrder = (event) => {
           event.preventDefault();
-          if (!customerDraft.name.trim() || !customerDraft.phone.trim()) return;
+          if (!customerDraft.name.trim() || !customerDraft.phone.trim()) {
+            alert("請填寫會員名稱與電話。正確格式：會員名稱為文字；電話請輸入可聯絡的電話號碼，例如 0912345678。");
+            return;
+          }
 
           const savedCustomer = buildCustomerRecord(customerDraft, customers);
           setCustomers((current) => [savedCustomer, ...current]);
@@ -3620,6 +3626,56 @@
         );
       }
 
+      function getFieldLabel(field) {
+        const labelledBy = field.getAttribute("aria-label") || field.getAttribute("placeholder");
+        if (labelledBy) return labelledBy;
+        const label = field.closest("label");
+        const labelText = label?.querySelector("span")?.textContent || label?.textContent;
+        return (labelText || "此欄位").replace(/\s+/g, " ").trim();
+      }
+
+      function getFieldFormatHint(field) {
+        if (field.dataset.format) return field.dataset.format;
+        if (field instanceof HTMLSelectElement) return "請從下拉選單選擇一個項目。";
+        if (field.type === "date") return "日期格式為 YYYY-MM-DD。";
+        if (field.type === "email") return "請輸入有效 E-mail，例如 name@example.com。";
+        if (field.type === "number") {
+          const min = field.getAttribute("min");
+          const step = field.getAttribute("step");
+          if (step === "1") return `請輸入整數${min ? `，不可小於 ${min}` : ""}。`;
+          if (step === "0.1") return `請輸入數字，可到小數點後 1 位${min ? `，不可小於 ${min}` : ""}。`;
+          return "請輸入有效數字。";
+        }
+        if (field.pattern === "[A-Za-z0-9]+") return "帳號僅可輸入英文字母與數字。";
+        if (field.pattern === "\\d{6}") return "密碼須為 6 位數字，例如 000000。";
+        return "請輸入文字或依欄位要求填寫正確資料。";
+      }
+
+      function handleInvalidField(event) {
+        const field = event.target;
+        if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement)) return;
+        const label = getFieldLabel(field);
+        const hint = getFieldFormatHint(field);
+        if (field.validity.valueMissing) {
+          field.setCustomValidity(`請填寫「${label}」。正確格式：${hint}`);
+        } else {
+          field.setCustomValidity(`「${label}」格式不正確。正確格式：${hint}`);
+        }
+      }
+
+      function clearFieldValidity(event) {
+        const field = event.target;
+        if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement) {
+          field.setCustomValidity("");
+        }
+      }
+
+      const formValidationProps = {
+        onInvalid: handleInvalidField,
+        onInput: clearFieldValidity,
+        onChange: clearFieldValidity,
+      };
+
       function CustomerFormModal({ draft, setDraft, mode = "create", onClose, onSubmit }) {
         const inputClass = "h-10 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-900 focus:ring-2 focus:ring-neutral-900/10";
         const isEditMode = mode === "edit";
@@ -3646,7 +3702,7 @@
                 </button>
               </div>
 
-              <form onSubmit={onSubmit} className="space-y-5 p-5">
+              <form {...formValidationProps} onSubmit={onSubmit} className="space-y-5 p-5">
                 <div className="grid gap-4 md:grid-cols-2">
                   <FormField label="會員名稱（必填）">
                     <input
@@ -4213,7 +4269,7 @@
         const submit = (event) => {
           event.preventDefault();
           if (!draft.id.trim() || !draft.vendor.trim() || normalizedItems.length === 0) {
-            alert("請填入採購單號、廠商，並至少建立一筆商品與數量。");
+            alert("請填入採購單號、廠商，並至少建立一筆商品與數量。正確格式：採購單號與廠商為文字；商品需從下拉選單選擇；件數為整數，布料公尺數可到小數點後 1 位。");
             return;
           }
           const firstItem = normalizedItems[0];
@@ -4232,7 +4288,7 @@
         return (
           <section className="mt-7 rounded-lg border border-neutral-200 bg-[#D6DEC9] shadow-sm">
             <DocFormHeader title="新建採購單" helper="已向廠商叫貨後建立採購單；採購單成立時不會增加庫存。" onBack={onBack} submitLabel="建立採購單" />
-            <form id="flow-doc-form" onSubmit={submit} className="space-y-6 p-5">
+            <form {...formValidationProps} id="flow-doc-form" onSubmit={submit} className="space-y-6 p-5">
               <OrderSection title="採購單資料" helper="到貨後依照實際收到的商品轉進貨單，可只處理本單部分品項。">
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   <FormField label="採購單號"><input required value={draft.id} onChange={(event) => updateDraft("id", event.target.value)} className={inputClass} /></FormField>
@@ -4314,18 +4370,18 @@
         const submit = (event) => {
           event.preventDefault();
           if (!draft.id.trim() || !draft.vendor.trim() || !draft.productId || !Number(draft.qty)) {
-            alert("請填入進貨單號、廠商、商品與數量。");
+            alert("請填入進貨單號、廠商、商品與數量。正確格式：進貨單號與廠商為文字；商品需從下拉選單選擇；件數為整數，布料公尺數可到小數點後 1 位。");
             return;
           }
           const qty = isFabric ? normalizeFabricQuantity(draft.qty) : Number(draft.qty);
           if (isFabric && qty <= 0) {
-            alert("布料進貨數量需大於 0。");
+            alert("布料進貨數量需大於 0。正確格式：請輸入公尺數，可到小數點後 1 位，例如 3.5。");
             return;
           }
           const fabricAllocation = isFabric && draft.batchMode === "new" ? allocateFabricBatch(draft.date, fabrics) : null;
           const batchNo = isFabric ? (fabricAllocation ? fabricAllocation.batchId : draft.batchNo) : "";
           if (isFabric && !batchNo) {
-            alert("布料進貨需指定批號。");
+            alert("布料進貨需指定批號。正確格式：請從批號下拉選單選擇既有批號，或輸入 YYMMDD / YYMMDD+A-Z 格式的新批號，例如 260826A。");
             return;
           }
 
@@ -4392,7 +4448,7 @@
         return (
           <section className="mt-7 rounded-lg border border-neutral-200 bg-[#D6DEC9] shadow-sm">
             <DocFormHeader title="新建進貨單" helper="收到商品後建立進貨單，送出時會增加庫存。" onBack={onBack} submitLabel="建立進貨單" />
-            <form id="flow-doc-form" onSubmit={submit} className="space-y-6 p-5">
+            <form {...formValidationProps} id="flow-doc-form" onSubmit={submit} className="space-y-6 p-5">
               <OrderSection title="進貨單資料" helper="布料商品必須指定批號，同款布料不同批號分別管理。">
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   <FormField label="進貨單號"><input required value={draft.id} onChange={(event) => updateDraft("id", event.target.value)} className={inputClass} /></FormField>
@@ -4442,7 +4498,7 @@
         const submit = (event) => {
           event.preventDefault();
           if (!draft.id.trim() || !draft.location.trim() || !draft.productId || !Number(draft.qty)) {
-            alert("請填入單號、地點、商品與數量。");
+            alert("請填入單號、地點、商品與數量。正確格式：單號與地點為文字；商品需從下拉選單選擇；數量需為大於 0 的整數。");
             return;
           }
           onSave({
@@ -4456,7 +4512,7 @@
         return (
           <section className="mt-7 rounded-lg border border-neutral-200 bg-[#D6DEC9] shadow-sm">
             <DocFormHeader title="新建寄售/快閃單據" helper="建立寄售點、快閃活動或市集備貨紀錄。" onBack={onBack} submitLabel="建立單據" />
-            <form id="flow-doc-form" onSubmit={submit} className="space-y-6 p-5">
+            <form {...formValidationProps} id="flow-doc-form" onSubmit={submit} className="space-y-6 p-5">
               <OrderSection title="寄售/快閃資料" helper="此單據目前先記錄作業資訊，後續可接庫存轉倉或結算流程。">
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   <FormField label="單號"><input required value={draft.id} onChange={(event) => updateDraft("id", event.target.value)} className={inputClass} /></FormField>
@@ -4493,7 +4549,7 @@
         const submit = (event) => {
           event.preventDefault();
           if (!selectedItem || qty <= 0) {
-            alert("請選擇品項並填入正確的調整數量。");
+            alert("請選擇品項並填入正確的調整數量。正確格式：商品數量需為整數；布料數量以公尺計，可到小數點後 1 位，且不可為 0。");
             return;
           }
 
@@ -4540,7 +4596,7 @@
         return (
           <section className="mt-7 rounded-lg border border-neutral-200 bg-[#D6DEC9] shadow-sm">
             <DocFormHeader title="新建庫存調整單" helper="用於臨時入庫、出庫、盤盈或盤虧調整，送出後會更新庫存並留下紀錄。" onBack={onBack} submitLabel="建立調整單" />
-            <form id="flow-doc-form" onSubmit={submit} className="space-y-6 p-5">
+            <form {...formValidationProps} id="flow-doc-form" onSubmit={submit} className="space-y-6 p-5">
               <OrderSection title="庫存調整資料" helper="布料調整需選到指定批號，數量以公尺計算到小數點後 1 位。">
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   <FormField label="調整單號"><input required value={draft.id} onChange={(event) => updateDraft("id", event.target.value)} className={inputClass} /></FormField>
@@ -4665,7 +4721,7 @@
         const submitStocktake = (event) => {
           event.preventDefault();
           if (!selectedItem || countedStock === null || Number.isNaN(countedStock) || countedStock < 0) {
-            alert("請選擇盤點品項並填入正確的實盤數量。");
+            alert("請選擇盤點品項並填入正確的實盤數量。正確格式：商品實盤為 0 或正整數；布料實盤為 0 或正數，可到小數點後 1 位。");
             return;
           }
 
@@ -4716,7 +4772,7 @@
         const submitBatchStocktake = (event) => {
           event.preventDefault();
           if (countedBatchRows.length === 0) {
-            alert("請至少輸入一項實盤數量，或確認目前有帳面庫存非 0 的未填項目。");
+            alert("請至少輸入一項實盤數量，或確認目前有帳面庫存非 0 的未填項目。正確格式：商品實盤為 0 或正整數；布料實盤為 0 或正數，可到小數點後 1 位。");
             return;
           }
 
@@ -4725,7 +4781,7 @@
             return Number.isNaN(row.itemCountedStock) || row.itemCountedStock < 0;
           });
           if (invalidRows.length > 0) {
-            alert("批量盤點中有不正確的實盤數量，請確認後再送出。");
+            alert("批量盤點中有不正確的實盤數量，請確認後再送出。正確格式：不可輸入負數；商品請輸入整數，布料可到小數點後 1 位。");
             return;
           }
 
@@ -4796,7 +4852,7 @@
             </div>
 
             {entryMode === "single" && (
-            <form onSubmit={submitStocktake} className="grid gap-4 border-b border-neutral-200 px-5 py-5 lg:grid-cols-6">
+            <form {...formValidationProps} onSubmit={submitStocktake} className="grid gap-4 border-b border-neutral-200 px-5 py-5 lg:grid-cols-6">
               <label className="lg:col-span-1">
                 <span className="text-xs font-medium text-neutral-500">盤點日期</span>
                 <input
@@ -4885,7 +4941,7 @@
             )}
 
             {entryMode === "batch" && (
-              <form onSubmit={submitBatchStocktake} className="border-b border-neutral-200">
+              <form {...formValidationProps} onSubmit={submitBatchStocktake} className="border-b border-neutral-200">
                 <div className="grid gap-4 px-5 py-5 lg:grid-cols-6">
                   <label className="lg:col-span-1">
                     <span className="text-xs font-medium text-neutral-500">盤點日期</span>
@@ -5158,8 +5214,14 @@
 
         const submitProduct = (event) => {
           event.preventDefault();
-          if (!draft.name.trim() || !draft.labelName.trim()) return;
-          if (usesConsignmentNativeCode && !draft.consignmentNativeCode.trim()) return;
+          if (!draft.name.trim() || !draft.labelName.trim()) {
+            alert("請填寫產品名稱與標籤名稱。正確格式：兩欄皆為文字，標籤名稱會用於列印標籤。");
+            return;
+          }
+          if (usesConsignmentNativeCode && !draft.consignmentNativeCode.trim()) {
+            alert("請填寫原生編碼。正確格式：此寄售品牌使用自己的編碼，請輸入品牌提供的原生編碼取代流水編號。");
+            return;
+          }
 
           onSave({
             id: Math.max(0, ...products.map((product) => Number(product.id) || 0)) + 1,
@@ -5253,7 +5315,7 @@
         };
 
         return (
-          <form onSubmit={submitProduct} className="mt-7 overflow-hidden rounded-lg border border-neutral-200 bg-[#D6DEC9] shadow-sm">
+          <form {...formValidationProps} onSubmit={submitProduct} className="mt-7 overflow-hidden rounded-lg border border-neutral-200 bg-[#D6DEC9] shadow-sm">
             <div className="flex flex-col gap-3 border-b border-neutral-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-neutral-950">新增商品資料</h2>
@@ -5646,7 +5708,10 @@
 
         const saveCustomer = (event) => {
           event.preventDefault();
-          if (!customerDraft.name.trim() || !customerDraft.phone.trim()) return;
+          if (!customerDraft.name.trim() || !customerDraft.phone.trim()) {
+            alert("請填寫會員名稱與電話。正確格式：會員名稱為文字；電話請輸入可聯絡的電話號碼，例如 0912345678。");
+            return;
+          }
 
           const savedCustomer = buildCustomerRecord(customerDraft, customers, customerModalMode);
 
@@ -5713,13 +5778,16 @@
 
         const saveUser = (event) => {
           event.preventDefault();
-          if (!userDraft.name.trim() || !userDraft.role) return;
+          if (!userDraft.name.trim() || !userDraft.role) {
+            alert("請填寫使用者名稱並選擇使用者類型。正確格式：名稱為文字；使用者類型請從下拉選單選擇。");
+            return;
+          }
           if (userDraft.account.trim() && !/^[a-zA-Z0-9]+$/.test(userDraft.account.trim())) {
-            alert("帳號僅可輸入英文字母與數字。");
+            alert("帳號格式不正確。正確格式：僅可輸入英文字母與數字，不可包含空白或符號。");
             return;
           }
           if (!/^\d{6}$/.test(userDraft.password.trim())) {
-            alert("密碼需為 6 位數字。");
+            alert("密碼格式不正確。正確格式：密碼需為 6 位數字，例如 000000。");
             return;
           }
           const duplicatedAccount = users.some(
@@ -5729,7 +5797,7 @@
               (userModalMode !== "edit" || user.id !== userDraft.id)
           );
           if (duplicatedAccount) {
-            alert("此帳號已被其他使用者使用。");
+            alert("此帳號已被其他使用者使用。正確格式：請輸入未被使用過的英數帳號，或將帳號欄留空。");
             return;
           }
 
@@ -5776,7 +5844,10 @@
 
         const saveCategory = (event) => {
           event.preventDefault();
-          if (!categoryDraft.name.trim() || !categoryDraft.code.trim()) return;
+          if (!categoryDraft.name.trim() || !categoryDraft.code.trim()) {
+            alert("請填寫分類名稱與分類代碼。正確格式：分類名稱為文字；分類代碼請使用大寫英文字母或數字，例如 BE、FS、100G。");
+            return;
+          }
 
           const nextCategory = {
             ...categoryDraft,
@@ -5808,7 +5879,10 @@
 
         const savePartner = (event) => {
           event.preventDefault();
-          if (!partnerDraft.name.trim() || !partnerDraft.category) return;
+          if (!partnerDraft.name.trim() || !partnerDraft.category) {
+            alert("請填寫合作單位名稱並選擇分類。正確格式：名稱為文字；分類請從進貨廠商、裁縫、寄售品牌、寄售點、攝影中選擇。");
+            return;
+          }
 
           const nextPartner = {
             ...partnerDraft,
@@ -5994,7 +6068,7 @@
                   編輯 {user.id} {user.name} 前，請先輸入目前密碼。
                 </p>
               </div>
-              <form onSubmit={onSubmit} className="space-y-4 p-5">
+              <form {...formValidationProps} onSubmit={onSubmit} className="space-y-4 p-5">
                 <label className="block">
                   <span className="mb-2 block text-sm font-medium text-neutral-700">目前密碼</span>
                   <input
@@ -6080,7 +6154,7 @@
                 </button>
               </div>
 
-              <form onSubmit={onSubmit} className="space-y-5 p-5">
+              <form {...formValidationProps} onSubmit={onSubmit} className="space-y-5 p-5">
                 <div className="grid gap-4 md:grid-cols-2">
                   <FormField label="使用者名稱（必填）">
                     <input
@@ -6240,7 +6314,7 @@
                 </button>
               </div>
 
-              <form onSubmit={onSubmit} className="space-y-5 p-5">
+              <form {...formValidationProps} onSubmit={onSubmit} className="space-y-5 p-5">
                 <div className="grid gap-4 md:grid-cols-2">
                   <FormField label="分類（必填）">
                     <select
@@ -6563,7 +6637,7 @@
                 </button>
               </div>
 
-              <form onSubmit={onSubmit} className="space-y-5 p-5">
+              <form {...formValidationProps} onSubmit={onSubmit} className="space-y-5 p-5">
                 <div className="grid gap-4 md:grid-cols-2">
                   <FormField label="分類群組">
                     <select
@@ -6659,7 +6733,10 @@
 
         const saveTask = (event) => {
           event.preventDefault();
-          if (!taskDraft.assigner.trim() || !taskDraft.assignee.trim() || !taskDraft.content.trim()) return;
+          if (!taskDraft.assigner.trim() || !taskDraft.assignee.trim() || !taskDraft.content.trim()) {
+            alert("請填寫指派人、被指派人與案件內容。正確格式：指派人與被指派人為使用者名稱；案件內容為文字。");
+            return;
+          }
 
           const nextTask = {
             id: `TSK-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${String(taskRecords.length + 1).padStart(3, "0")}`,
@@ -6771,7 +6848,7 @@
                 </button>
               </div>
 
-              <form onSubmit={onSubmit} className="space-y-5 p-5">
+              <form {...formValidationProps} onSubmit={onSubmit} className="space-y-5 p-5">
                 <div className="grid gap-4 md:grid-cols-2">
                   <FormField label="指派人">
                     <input
@@ -8098,7 +8175,7 @@
 
         const printShipmentList = () => {
           if (selectedShipmentItems.length === 0) {
-            alert("請先選取要列印的商品與數量。");
+            alert("請先選取要列印的商品與數量。正確格式：商品需勾選，列印數量需為大於 0 且不超過未出貨數量的數字。");
             return;
           }
           const printableItems = selectedShipmentItems.map((item) => ({
@@ -8142,7 +8219,7 @@
 
         const submitShipment = () => {
           if (selectedShipmentItems.length === 0) {
-            alert("請先選取要出貨的商品與數量。");
+            alert("請先選取要出貨的商品與數量。正確格式：商品需勾選，出貨數量需為大於 0 且不超過未出貨數量的數字。");
             return;
           }
           onShipItems(selectedShipmentItems, draft);
@@ -8179,7 +8256,7 @@
                 </button>
               </div>
 
-              <form onSubmit={onSubmit} className="space-y-5 p-5">
+              <form {...formValidationProps} onSubmit={onSubmit} className="space-y-5 p-5">
                 <OrderSection title="客戶訂單-表頭" helper="訂單基本資料">
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   <FormField label="訂單編號">
@@ -8797,7 +8874,7 @@
                 <p className="mt-2 text-sm text-neutral-500">請選擇啟用中的使用者，並輸入 6 位數字密碼。</p>
               </div>
 
-              <form onSubmit={submitLogin} className="space-y-4">
+              <form {...formValidationProps} onSubmit={submitLogin} className="space-y-4">
                 <label className="block">
                   <span className="mb-2 block text-sm font-medium text-neutral-700">使用者</span>
                   <select
@@ -9054,25 +9131,25 @@
           return item.productId || productKeyword || productName || item.quantity;
         });
 
-        if (!orderNo) errors.push("訂單編號");
-        if (!draft.orderDate) errors.push("訂單成立日期");
-        if (!draft.customerId && !customerKeyword) errors.push("客戶資料");
-        if (!draft.paymentStatus) errors.push("收款狀態");
-        if (activeItems.length === 0) errors.push("至少一筆商品資訊");
+        if (!orderNo) errors.push("訂單編號：請輸入文字或數字，例如 SO-20260909-001。");
+        if (!draft.orderDate) errors.push("訂單成立日期：請選擇日期，格式為 YYYY-MM-DD。");
+        if (!draft.customerId && !customerKeyword) errors.push("客戶資料：請搜尋並選擇客戶，或輸入客戶關鍵字。");
+        if (!draft.paymentStatus) errors.push("收款狀態：請從訂金、已付款、分期、未付款中選擇。");
+        if (activeItems.length === 0) errors.push("至少一筆商品資訊：請輸入商品編號或商品名稱。");
 
         activeItems.forEach((item, index) => {
           const itemLabel = `第 ${index + 1} 筆商品`;
           const productKeyword = String(item.productKeyword || "").trim();
           const productName = String(item.productName || "").trim();
           if (!item.productId && !productKeyword && !productName) {
-            errors.push(`${itemLabel}：商品資訊`);
+            errors.push(`${itemLabel}：請輸入商品編號或商品名稱。`);
           }
           if (!Number(item.quantity) || Number(item.quantity) <= 0) {
-            errors.push(`${itemLabel}：數量`);
+            errors.push(`${itemLabel}：數量需為大於 0 的數字；商品件數請輸入整數。`);
           }
           const product = productMap[item.productId];
           if (isFabricProduct(product) && !String(item.batchNo || "").trim()) {
-            errors.push(`${itemLabel}：布料批號`);
+            errors.push(`${itemLabel}：布料批號為必填，請從該款布料的批號下拉選單選擇。`);
           }
         });
 
