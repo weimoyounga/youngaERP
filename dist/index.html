@@ -107,7 +107,6 @@
       ];
 
       const userStorageKey = "erp-user-records";
-      const loginSessionStorageKey = "erp-current-user";
       const customerStorageKey = "erp-customer-records";
       const orderStorageKey = "erp-order-records";
       const shipmentStorageKey = "erp-shipment-records";
@@ -904,14 +903,6 @@
       ];
 
       function App() {
-        const [currentUser, setCurrentUser] = useState(() => {
-          try {
-            const storedUser = window.sessionStorage.getItem(loginSessionStorageKey);
-            return storedUser ? JSON.parse(storedUser) : null;
-          } catch (error) {
-            return null;
-          }
-        });
         const [activeView, setActiveView] = useState("home");
         const [activeFlow, setActiveFlow] = useState("orders");
         const [products, setProducts] = useState(initialProducts);
@@ -936,33 +927,6 @@
         const [activeHome, setActiveHome] = useState("pending");
         const [homeCalendarEvents, setHomeCalendarEvents] = useState(initialHomeCalendarEvents);
         const [productDraft, setProductDraft] = useState(createEmptyProductDraft());
-
-        const login = ({ account, password }) => {
-          const matchedUser = users.find(
-            (user) =>
-              user.status === "啟用" &&
-              user.account === account.trim() &&
-              user.password === password.trim()
-          );
-          if (!matchedUser) return false;
-          const nextUser = { id: matchedUser.id, name: matchedUser.name, role: matchedUser.role, account: matchedUser.account };
-          setCurrentUser(nextUser);
-          try {
-            window.sessionStorage.setItem(loginSessionStorageKey, JSON.stringify(nextUser));
-          } catch (error) {
-            console.warn("儲存登入狀態失敗。", error);
-          }
-          return true;
-        };
-
-        const logout = () => {
-          setCurrentUser(null);
-          try {
-            window.sessionStorage.removeItem(loginSessionStorageKey);
-          } catch (error) {
-            console.warn("清除登入狀態失敗。", error);
-          }
-        };
 
         useEffect(() => {
           try {
@@ -1478,10 +1442,6 @@
           console.log("新建訂單已加入未完成訂單列表，不扣庫存：", nextOrder);
         };
 
-        if (!currentUser) {
-          return <LoginPage onLogin={login} />;
-        }
-
         return (
           <main className="min-h-screen bg-[#DDE3D5] px-5 py-6 text-neutral-900 sm:px-8 sm:py-10">
             <div className="mx-auto max-w-7xl">
@@ -1502,16 +1462,6 @@
                   <NavButton active={activeView === "importExport"} onClick={() => setActiveView("importExport")}>
                     匯入/匯出
                   </NavButton>
-                  <div className="ml-auto flex items-center gap-3 px-3">
-                    <span className="text-sm text-neutral-600">{currentUser.name}</span>
-                    <button
-                      type="button"
-                      onClick={logout}
-                      className="h-9 rounded-md border border-neutral-300 bg-white px-3 text-sm font-medium text-neutral-700 transition hover:border-neutral-950 hover:text-neutral-950"
-                    >
-                      登出
-                    </button>
-                  </div>
                 </div>
               </nav>
 
@@ -5839,7 +5789,7 @@
               {activeDatabase === "users" && (
                 <DatabaseTable
                   title="使用者資料"
-                  helper="管理可登入系統的內部使用者、角色與帳號狀態。"
+                  helper="管理內部使用者、角色與帳號狀態；登入機制暫時停用。"
                   docs={users}
                   columns={["id", "name", "account", "role", "status"]}
                   onView={viewUser}
@@ -8657,84 +8607,6 @@
             </div>
             <p className="mt-3 text-sm text-neutral-500">{helper}</p>
           </article>
-        );
-      }
-
-      function LoginPage({ onLogin }) {
-        const [account, setAccount] = useState("");
-        const [password, setPassword] = useState("");
-        const [error, setError] = useState("");
-
-        const submitLogin = (event) => {
-          event.preventDefault();
-          if (!account.trim() || !password.trim()) {
-            setError("請輸入帳號與密碼。");
-            return;
-          }
-          const success = onLogin({ account, password });
-          if (!success) {
-            setError("帳號或密碼錯誤，或使用者已停用。");
-          }
-        };
-
-        return (
-          <main className="flex min-h-screen items-center justify-center bg-[#DDE3D5] px-5 py-10 text-neutral-900">
-            <section className="w-full max-w-md rounded-lg border border-neutral-200 bg-[#D6DEC9] p-6 shadow-sm">
-              <div className="mb-6">
-                <p className="text-sm font-medium text-neutral-500">Inventory ERP</p>
-                <h1 className="mt-2 text-2xl font-semibold text-neutral-950">登入系統</h1>
-                <p className="mt-2 text-sm text-neutral-500">請輸入使用者資料中設定的帳號與密碼。</p>
-              </div>
-
-              <form onSubmit={submitLogin} className="space-y-4">
-                <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-neutral-700">帳號</span>
-                  <input
-                    required
-                    value={account}
-                    onChange={(event) => {
-                      setAccount(event.target.value.replace(/[^a-zA-Z0-9]/g, ""));
-                      setError("");
-                    }}
-                    placeholder="輸入英數帳號"
-                    autoComplete="username"
-                    className="h-11 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-900 focus:ring-2 focus:ring-neutral-900/10"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-neutral-700">密碼</span>
-                  <input
-                    required
-                    type="password"
-                    inputMode="numeric"
-                    maxLength="6"
-                    value={password}
-                    onChange={(event) => {
-                      setPassword(event.target.value.replace(/\D/g, "").slice(0, 6));
-                      setError("");
-                    }}
-                    placeholder="6 位數字"
-                    autoComplete="current-password"
-                    className="h-11 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-900 focus:ring-2 focus:ring-neutral-900/10"
-                  />
-                </label>
-
-                {error && (
-                  <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-                    {error}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  className="h-11 w-full rounded-md bg-neutral-950 px-4 text-sm font-medium text-white transition hover:bg-neutral-700"
-                >
-                  登入
-                </button>
-              </form>
-            </section>
-          </main>
         );
       }
 
