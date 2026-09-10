@@ -2129,9 +2129,6 @@
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-neutral-950">匯入/匯出</h2>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    產出空白匯入模板、貼上表格資料匯入，或依日期與分類篩選後匯出 Excel 檔。
-                  </p>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {[
@@ -2178,7 +2175,6 @@
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h3 className="text-base font-semibold text-neutral-950">{selectedDataset.label}</h3>
-                      <p className="mt-1 text-sm text-neutral-500">{selectedDataset.helper}</p>
                     </div>
                     <span className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-neutral-950">
                       {selectedDataset.count} 筆
@@ -2190,7 +2186,6 @@
               {activeAction === "template" && (
                 <article className="rounded-lg border border-neutral-200 bg-neutral-50 p-5">
                   <h3 className="text-base font-semibold text-neutral-950">匯入模板</h3>
-                  <p className="mt-1 text-sm text-neutral-500">產出只有欄位表頭的空白 Excel 模板，填完後可複製表格內容貼回匯入介面。</p>
                   <div className="mt-4 overflow-x-auto rounded-md border border-neutral-200 bg-white">
                     <table className="w-full min-w-[760px] text-left text-sm">
                       <thead className="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
@@ -2222,7 +2217,6 @@
               {activeAction === "import" && (
                 <article className="rounded-lg border border-neutral-200 bg-neutral-50 p-5">
                   <h3 className="text-base font-semibold text-neutral-950">匯入</h3>
-                  <p className="mt-1 text-sm text-neutral-500">從 Excel 或 Google Sheets 複製含表頭的表格資料，直接貼到下方欄位。</p>
                   <textarea
                     value={importText}
                     onChange={(event) => setImportText(event.target.value)}
@@ -2270,7 +2264,6 @@
               {activeAction === "export" && (
                 <article className="rounded-lg border border-neutral-200 bg-neutral-50 p-5">
                   <h3 className="text-base font-semibold text-neutral-950">匯出</h3>
-                  <p className="mt-1 text-sm text-neutral-500">依資料類型篩選日期與分類後，匯出 Excel 可開啟的檔案。</p>
                   <div className="mt-4 grid gap-4 md:grid-cols-3">
                     <label className="block">
                       <span className="mb-2 block text-sm font-medium text-neutral-700">起始日期</span>
@@ -2868,7 +2861,6 @@
             <div className="flex items-start justify-between gap-4 border-b border-neutral-100 px-5 py-4">
               <div>
                 <h3 className="text-base font-semibold text-neutral-950">{title}</h3>
-                <p className="mt-1 text-sm text-neutral-500">{helper}</p>
               </div>
               <button
                 onClick={onViewAll}
@@ -3235,9 +3227,6 @@
               <div>
                 <p className="text-sm font-medium text-neutral-500">客戶訂單</p>
                 <h2 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-950">新建訂單</h2>
-                <p className="mt-2 text-sm text-neutral-500">
-                  收到客戶訂購或預購後建立訂單；出貨、收到款項、發票開立都完成後才轉為出貨單。
-                </p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -3608,7 +3597,6 @@
           <section className="rounded-lg border border-neutral-200 bg-[#D6DEC9] p-5">
             <div className="mb-4">
               <h3 className="text-base font-semibold text-neutral-950">{title}</h3>
-              <p className="mt-1 text-sm text-neutral-500">{helper}</p>
             </div>
             {children}
           </section>
@@ -3687,9 +3675,6 @@
               <div className="flex items-start justify-between gap-4 border-b border-neutral-100 px-5 py-4">
                 <div>
                   <h3 className="text-lg font-semibold text-neutral-950">{isEditMode ? "編輯客戶資料" : "新增客戶資料"}</h3>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    {isEditMode ? "修改會員、收件、門市與發票載具資料。" : "建立會員、收件、門市與發票載具資料，供訂單出貨時帶入。"}
-                  </p>
                 </div>
                 <button
                   type="button"
@@ -3829,7 +3814,6 @@
             <div className="flex flex-col gap-4 border-b border-neutral-200 px-5 py-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-neutral-950">商品清單</h2>
-                <p className="mt-1 text-sm text-neutral-500">搜尋、篩選並檢視目前商品庫存狀態。</p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <input
@@ -3902,7 +3886,6 @@
             <div className="flex flex-col gap-4 border-b border-neutral-200 px-5 py-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-neutral-950">布料庫存清單</h2>
-                <p className="mt-1 text-sm text-neutral-500">同款布料在不同批號分別管理庫存；單位為公尺，庫存計算到小數點後 1 位。</p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <input
@@ -3980,7 +3963,6 @@
       function StockFlowWorkspace(props) {
         const [inventoryMode, setInventoryMode] = useState("products");
         const [newDocType, setNewDocType] = useState("");
-        const showSopPanel = props.activeFlow !== "orders";
         const flowTabs = [
           { id: "inventory", label: "庫存管理", count: props.filteredProducts.length + props.filteredFabrics.length },
           { id: "orders", label: "訂單", count: props.orders.length },
@@ -4063,9 +4045,6 @@
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-neutral-950">進/出貨作業</h2>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    客戶訂購或預購先建立訂單；出貨、收款與發票完成後才轉為出貨單。採購單可依實際到貨跨單彙整轉進貨單。
-                  </p>
                 </div>
                 {props.activeFlow !== "shipments" && (
                   <button
@@ -4078,18 +4057,7 @@
               </div>
             </div>
 
-            <div className={`grid gap-0 ${showSopPanel ? "lg:grid-cols-[280px_1fr]" : "lg:grid-cols-1"}`}>
-              {showSopPanel && (
-                <aside className="border-b border-neutral-200 bg-neutral-50 px-5 py-5 lg:border-b-0 lg:border-r">
-                  <h3 className="text-sm font-semibold text-neutral-950">進出貨 SOP</h3>
-                  <ol className="mt-4 space-y-4 text-sm text-neutral-600">
-                    {stockFlowSopSteps.map((step) => (
-                      <SopStep key={step.number} number={step.number} title={step.title} detail={step.detail} />
-                    ))}
-                  </ol>
-                </aside>
-              )}
-
+            <div className="grid gap-0 lg:grid-cols-1">
               <div className="p-5">
                 {props.activeFlow === "inventory" && (
                   <InventoryManagementPanel
@@ -4158,7 +4126,6 @@
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-base font-semibold text-neutral-950">庫存管理</h3>
-                <p className="mt-1 text-sm text-neutral-500">集中查看商品庫存與布料庫存，供進出貨作業即時核對。</p>
               </div>
               <div className="inline-flex rounded-lg border border-neutral-200 bg-neutral-100 p-1">
                 {[
@@ -4644,7 +4611,6 @@
             <div>
               <p className="text-sm font-medium text-neutral-500">進/出貨作業</p>
               <h2 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-950">{title}</h2>
-              <p className="mt-2 text-sm text-neutral-500">{helper}</p>
             </div>
             <div className="flex gap-2">
               <button type="button" onClick={onBack} className="h-10 rounded-md border border-neutral-300 px-4 text-sm font-medium text-neutral-700 transition hover:border-neutral-950 hover:text-neutral-950">
@@ -4829,7 +4795,6 @@
           <section className="overflow-hidden rounded-lg border border-neutral-200 bg-[#D6DEC9] shadow-sm">
             <div className="border-b border-neutral-200 px-5 py-4">
               <h2 className="text-lg font-semibold text-neutral-950">庫存盤點</h2>
-              <p className="mt-1 text-sm text-neutral-500">可單筆調整，也可用批量盤點處理全店定期盤點；未填實盤數量且帳面庫存非 0 的項目會視為實盤 0 並列入盤差。</p>
               <div className="mt-4 inline-flex rounded-lg border border-neutral-200 bg-neutral-100 p-1">
                 {[
                   { id: "single", label: "單筆盤點" },
@@ -5317,7 +5282,6 @@
             <div className="flex flex-col gap-3 border-b border-neutral-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-neutral-950">新增商品資料</h2>
-                <p className="mt-1 text-sm text-neutral-500">建立商品基本資料、售價、採購資訊與產品圖片。</p>
               </div>
               <div className="flex gap-2">
                 <button type="button" onClick={onBack} className="h-10 rounded-md border border-neutral-300 px-4 text-sm font-medium text-neutral-700 transition hover:border-neutral-950">
@@ -5911,9 +5875,6 @@
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-neutral-950">基本資料</h2>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    管理系統共用主檔資料，包含客戶、使用者、商品、供應商、裁縫、寄售與批號資料。
-                  </p>
                 </div>
                 <button
                   className="h-10 rounded-md bg-neutral-950 px-4 text-sm font-medium text-white transition hover:bg-neutral-700"
@@ -6069,9 +6030,6 @@
             <div className="w-full max-w-sm rounded-lg border border-neutral-200 bg-[#D6DEC9] shadow-xl">
               <div className="border-b border-neutral-100 px-5 py-4">
                 <h3 className="text-lg font-semibold text-neutral-950">確認目前密碼</h3>
-                <p className="mt-1 text-sm text-neutral-500">
-                  編輯 {user.id} {user.name} 前，請先輸入目前密碼。
-                </p>
               </div>
               <form {...formValidationProps} onSubmit={onSubmit} className="space-y-4 p-5">
                 <label className="block">
@@ -6148,7 +6106,6 @@
               <div className="flex items-start justify-between gap-4 border-b border-neutral-100 px-5 py-4">
                 <div>
                   <h3 className="text-lg font-semibold text-neutral-950">{modalTitle}</h3>
-                  <p className="mt-1 text-sm text-neutral-500">{modalHelper}</p>
                 </div>
                 <button
                   type="button"
@@ -6308,7 +6265,6 @@
               <div className="flex items-start justify-between gap-4 border-b border-neutral-100 px-5 py-4">
                 <div>
                   <h3 className="text-lg font-semibold text-neutral-950">新增合作單位資料</h3>
-                  <p className="mt-1 text-sm text-neutral-500">建立進貨廠商、裁縫、寄售品牌、寄售點或攝影合作單位。</p>
                 </div>
                 <button
                   type="button"
@@ -6479,9 +6435,6 @@
             <div className="mb-4 flex flex-col gap-3">
               <div>
                 <h3 className="text-base font-semibold text-neutral-950">分類資料</h3>
-                <p className="mt-1 text-sm text-neutral-500">
-                  管理商品資料使用的第一層與各層延伸分類，分類代碼會作為 SKU 組成依據。
-                </p>
               </div>
               <div className="grid gap-3 lg:grid-cols-[1fr_220px_220px]">
                 <label className="block">
@@ -6629,9 +6582,6 @@
                   <h3 className="text-lg font-semibold text-neutral-950">
                     {mode === "edit" ? "編輯分類資料" : "新增分類資料"}
                   </h3>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    設定分類群組、上層分類、分類名稱與 SKU 分類代碼。
-                  </p>
                 </div>
                 <button
                   type="button"
@@ -6764,9 +6714,6 @@
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-neutral-950">事務</h2>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    管理日常行政作業，包含零用金、標籤列印、行事曆班表與指派任務。
-                  </p>
                 </div>
                 <button
                   className="h-10 rounded-md bg-neutral-950 px-4 text-sm font-medium text-white transition hover:bg-neutral-700"
@@ -6842,7 +6789,6 @@
               <div className="flex items-start justify-between gap-4 border-b border-neutral-100 px-5 py-4">
                 <div>
                   <h3 className="text-lg font-semibold text-neutral-950">新增指派任務</h3>
-                  <p className="mt-1 text-sm text-neutral-500">建立內部待辦案件，並記錄相關單據或商品資訊。</p>
                 </div>
                 <button
                   type="button"
@@ -7063,7 +7009,6 @@
             <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
               <div>
                 <h3 className="text-base font-semibold text-neutral-950">標籤列印</h3>
-                <p className="mt-1 text-sm text-neutral-500">可一次加入多項商品，系統會從起始格開始依序排入同一張標籤紙。</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <button className={`rounded-md px-4 py-2 text-sm font-medium transition ${labelFormat === "fabric" ? "bg-neutral-950 text-white" : "border border-neutral-300 bg-white text-neutral-700 hover:border-neutral-950"}`} onClick={() => setLabelFormat("fabric")}>
@@ -7274,7 +7219,6 @@
             <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
               <div>
                 <h3 className="text-base font-semibold text-neutral-950">標籤列印</h3>
-                <p className="mt-1 text-sm text-neutral-500">輸入商品編碼、列印格數與起始格，預覽會依 1-65 格由左至右、由上到下產生。</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <button
@@ -7438,9 +7382,6 @@
             <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
               <div>
                 <h3 className="text-base font-semibold text-neutral-950">標籤列印</h3>
-                <p className="mt-1 text-sm text-neutral-500">
-                  選擇標籤格式後，可預覽 A4 直式 5 x 13 的列印版面。
-                </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <button
@@ -7540,7 +7481,6 @@
           <div>
             <div className="mb-4 flex flex-col gap-1">
               <h3 className="text-base font-semibold text-neutral-950">{title}</h3>
-              <p className="text-sm text-neutral-500">{helper}</p>
             </div>
             <div className="overflow-x-auto rounded-lg border border-neutral-200">
               <table className="w-full min-w-[780px] text-left">
@@ -7698,7 +7638,6 @@
             <div className="mb-4 flex flex-col gap-3">
               <div>
                 <h3 className="text-base font-semibold text-neutral-950">{title}</h3>
-                <p className="mt-1 text-sm text-neutral-500">{helper}</p>
               </div>
               <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
                 <label className="block">
@@ -8254,7 +8193,6 @@
               <div className="flex items-start justify-between gap-4 border-b border-neutral-100 px-5 py-4">
                 <div>
                   <h3 className="text-lg font-semibold text-neutral-950">{modalTitle}</h3>
-                  <p className="mt-1 text-sm text-neutral-500">查看或調整未完成訂單資料，修改後會更新訂單列表。</p>
                 </div>
                 <button type="button" onClick={onClose} className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-950 hover:text-neutral-950">
                   關閉
@@ -8373,7 +8311,6 @@
                 {isShippingMode && (
                   <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3">
                     <p className="text-sm font-medium text-neutral-950">選取本次要出貨或列印的商品與數量。</p>
-                    <p className="mt-1 text-sm text-neutral-500">可出貨數量會扣除已出貨數量，仍可手動下調。</p>
                   </div>
                 )}
 
@@ -8824,7 +8761,6 @@
           <div>
             <div className="mb-4 flex flex-col gap-1">
               <h3 className="text-base font-semibold text-neutral-950">{title}</h3>
-              <p className="text-sm text-neutral-500">{helper}</p>
             </div>
             <div className="overflow-x-auto rounded-lg border border-neutral-200">{children}</div>
           </div>
@@ -8841,7 +8777,6 @@
               </div>
               <div className={`h-2.5 w-2.5 rounded-full ${warning ? "bg-amber-500" : "bg-emerald-500"}`} />
             </div>
-            <p className="mt-3 text-sm text-neutral-500">{helper}</p>
           </article>
         );
       }
@@ -8876,7 +8811,6 @@
               <div className="mb-6">
                 <p className="text-sm font-medium text-neutral-500">Inventory ERP</p>
                 <h1 className="mt-2 text-2xl font-semibold text-neutral-950">登入系統</h1>
-                <p className="mt-2 text-sm text-neutral-500">請選擇啟用中的使用者，並輸入 6 位數字密碼。</p>
               </div>
 
               <form {...formValidationProps} onSubmit={submitLogin} className="space-y-4">
