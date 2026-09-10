@@ -175,9 +175,7 @@
         const normalizedUsers = sourceUsers.map((user) => ({
           ...user,
           account: user.account || user.username || "",
-          password: String(user.password || "") === "312057"
-            ? "000000"
-            : /^\d{6}$/.test(String(user.password || "")) ? String(user.password) : "000000",
+          password: /^\d{6}$/.test(String(user.password || "")) ? String(user.password) : "000000",
         }));
         const hasNozomi = normalizedUsers.some((user) => user.id === "U-003");
         if (!hasNozomi) {
@@ -5819,11 +5817,18 @@
             warehouses: userDraft.warehouses.join("、"),
           };
 
-          setUsers((current) =>
-            userModalMode === "edit"
-              ? current.map((user) => (user.id === savedUser.id ? savedUser : user))
-              : [savedUser, ...current]
-          );
+          setUsers((current) => {
+            const nextUsers =
+              userModalMode === "edit"
+                ? current.map((user) => (user.id === savedUser.id ? savedUser : user))
+                : [savedUser, ...current];
+            try {
+              window.localStorage.setItem(userStorageKey, JSON.stringify(nextUsers));
+            } catch (error) {
+              console.warn("立即儲存使用者本機資料失敗。", error);
+            }
+            return nextUsers;
+          });
           setShowUserModal(false);
           setUserModalMode("create");
           setUserDraft(createEmptyUserDraft());
